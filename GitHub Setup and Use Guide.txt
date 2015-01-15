@@ -1,0 +1,45 @@
+       _ _   _           _                   _     _      
+      (_) | | |         | |                 (_)   | |     
+  __ _ _| |_| |__  _   _| |__     __ _ _   _ _  __| | ___ 
+ / _` | | __| '_ \| | | | '_ \   / _` | | | | |/ _` |/ _ \
+| (_| | | |_| | | | |_| | |_) | | (_| | |_| | | (_| |  __/
+ \__, |_|\__|_| |_|\__,_|_.__/   \__, |\__,_|_|\__,_|\___|
+  __/ |                           __/ |                   
+ |___/                           |___/                    
+
+****Setting Up GitHub (Applies to Everybody)
+***______instructions for cloning a pre-existing repository______
+(?)1. Create a folder, this will serve as your work directory. 
+(?)2. Open the Github client and sign in. 
+(?)3. In the top right corner, click the gear. 
+(?)4. Click repository settings.
+
+ 
+****Accessing Latest Code (Non-coders)
+1. Open GitHub Client and Sign In.
+2. Press "Sync" in the upper right hand corner.
+3. Code is now updated to the newest master version in your local directory. 
+4. Run code as you would normally.
+
+
+****Setup(New Coders/New Features)
+When starting Github, you will likely have your active branch be the master. 
+1. To start editing code, change this branch to your personal one or create a new one.
+	1a. To create a new branch, go to the top of GUI where it says "master" with a dropdown arrow.
+	1b. Click this, it should open the list of branches and a search bar.
+	1c. Type in the name of your new branch (either a feature name or your personal name)
+	    -Make it a feature name if you plan on coding with someone else
+	    -Otherwise, make a personal branch to use for your personal code revisions/testing.
+
+****Editing Code(Coders)
+1. You now have your own branch, which is a copy of the master folder at the time of the branch's creation. 
+	1a. If the master has been updated and you wish to pull the 
+	    files to your branch to give you the most updated version, 
+	   **** ___________syncing branch with master instructions_______
+2. Open the work directory and edit/test code as you would normally.
+3. Save all code.
+4. Press "Sync" in the top right hand corner of the GitHub Client to 
+   update your experimental branch with your newest revisions.
+
+
+-Written by Nicholas Walsh
