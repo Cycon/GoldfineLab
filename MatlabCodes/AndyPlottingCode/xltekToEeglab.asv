@@ -1,0 +1,79 @@
+function xltekToEeglab
+%version 1 - 2/10/11
+%version 1.1 5/1/11 give option to not use epoch file but instead use the
+    %first photic marker as the start time or just leave as is
+%first make a list of start and end times in excel and save as a text file.
+%then export a txt file from xltek
+%use this code to cut out the times you want and save as a cut file. Then
+%use xtptoeeglabcut
+%TO DO:
+%[ ] give user option to vary the epoch length or have no epochs in eeglab
+%(modify in xtptoeeglabcut or modify here and send to there);
+%[ ] consider code to just plot at the end here (eegplot) so don't need to
+%run eeglab if not planning to do ICA. Consider moving everything out of
+%eeglab.
+
+%first set up defaults, [] not sure if these are accurate!
+xtp_build_environment; %needed for headbox information, key that it makes its variables global and so do other codes that use them.
+% %below lines are to ensure that these parameters can be used especially the
+% %headboxes
+% global XTP_GLOBAL_PARAMS XTP_CHRONUX_PARAMS XTP_PCA_PARAMS XTP_HEADBOXES XTP_HB_MONTAGES XTP_COHERENCY_PAIRS XTP_CONVERSION_FACTORS XTP_ENVIRONMENT_VERSION XTP_PLOT_LOCATIONS
+params.readXLTfile = 1;
+params.cutSnippets = 1;
+params.units = 'uV';
+params.montageData=0;
+params.applyHPF=0;
+params.applyNotchFilter=0;
+params.applyLPF=0;
+params.interactive=1;
+
+savename=input('Savename: ','s');
+
+%then pull in the epoch txt file
+epochList=xtp_readEpochs;
+
+% the following will allow you to select all of the files to be cut at
+% once
+[filenames, pathname] = uigetfile('*.txt', 'Select files to preprocess','MultiSelect','on');
+
+
+if ~iscell(filenames) %since designed to run on many at once need to convert to cell if only one chosen
+    filename{1}=filenames;
+    clear filenames;
+    filenames=filename;
+end
+numfiles = size(filenames, 2);
+
+%this will read in and cut all the files and save the exports as
+%filename.cut. Needs to be run on multiple exported text files.
+for i = 1:numfiles
+    fullXLTEK{i}=xtp_readXLTfileWithPhotic(fullfile(pathname,filenames{i}),params); %just reads in data
+    if epochList==0 %if no epochs used, use first photic to cut start or if no photic then leave as is
+      onTimes=find(strcmpi(fullXLTEK{1}.data{3},'ON'));%times when photic is on
+      for jk=1:3
+        fullXLTEK{1}.data{jk}=fullXLTEK{1}.data{jk}(onTimes(1):end,:);
+      end
+        fullXLTEK{1}.photic{1}=strcmpi(fullXLTEK{1}.data{3},'ON');
+        fullXLTEK{1}.data=fullXLTEK{1}.data2}./1000;%not 100% sure but should work
+        fullXLTEK{1}.metadata.units='uV';
+        cutXLTEK=fullXLTEK; %need to confirm this worked
+    else
+    cutXLTEK{i}=xtp_cutSnippetsWithPhotic(fullXLTEK{i},epochList,params); %converts units mV to uV and cuts data
+    end
+    % filevar{i} = cat(2,filenames{i}(1:end-4), '_cut');
+% megavar.(filevar{i}) = xtp_readXLTfile([pathname filenames{i}], params);
+% command = cat(2, filevar{i}, ' = xtp_cutSnippets(megavar.', filevar{i}, ', epochList, params)');
+% eval(command);
+end
+
+%aggregate the cutXLTEKs together
+%though concern is what if each one is a separate experiment and want to
+%analyze them separately. Need to give user the option to combine or
+%separate them. Could be done later in the import command but keep them
+%separate here. For now save here and then aggregate in crxtoeeglabcut
+
+save([savename 'xtp_cut'],'cutXLTEK');
+
+
+
+

@@ -1,0 +1,111 @@
+clear
+fisherdisc_demo
+frequency partitions in Hz (this is the variable "fpart"):
+    3.5000    5.5000
+    5.5000    7.5000
+    7.5000    9.5000
+    9.5000   12.5000
+   12.5000   15.5000
+   15.5000   19.5000
+   19.5000   23.5000
+   23.5000   28.5000
+   28.5000   35.5000
+   35.5000   44.5000
+   44.5000   54.5000
+if you want to change this, exit now and re-define fpart.
+Enter 1 to reset the random number generator (range: 0 to 1, default= 1):
+Enter data path (default= ../mcs/):
+attempting to load spectraCP2nav from ../mcs/normal2NavSpectrumCP2.mat
+attempting to load spectraCP2stopnav from ../mcs/normal2StopNavSpectrumCP2.mat
+attempting to load spectraP3nav from ../mcs/normal2NavSpectrumP3.mat
+attempting to load spectraP3stopnav from ../mcs/normal2StopNavSpectrumP3.mat
+Enter segment size (number of trials to consider contiguous (range: 0 to Inf, default= 2):
+Enter delrad (number of adjacent trials to consider dependent (range: 0 to Inf, default= Inf):
+  1->     CP2: normal2 Nav vs StopNav, nfeatures=11 nsamps=[  64   64]
+  2->      P3: normal2 Nav vs StopNav, nfeatures=11 nsamps=[  64   64]
+     1     2
+Enter choice (range: 1 to 2):
+whos
+  Name                        Size                    Bytes  Class
+
+  class_name                  1x2                       140  cell array
+  cname                       1x19                       38  char array
+  d                           2x2                   1072800  cell array
+  datapath                    1x7                        14  char array
+  delrad                      1x1                         8  double array
+  dmean                      11x1                        88  double array
+  fbins                       1x40                      320  double array
+  field_name                  1x16                       32  char array
+  file_name                   1x35                       70  char array
+  fpart                      11x2                       176  double array
+  freq_datasampling           1x1                         8  double array
+  freq_spectralsampling       1x1                         8  double array
+  freqs                       1x513                    4104  double array
+  hist_centers                1x40                      320  double array
+  iseg                        1x1                         8  double array
+  islist                      1x2                        16  double array
+  mt_params                   1x1                       816  struct array
+  nhist                       1x1                         8  double array
+  nsamps                      1x1                         8  double array
+  opts                        1x1                       878  struct array
+  ou                          1x2                     13172  cell array
+  results                     1x2                    989184  cell array
+  sc                          1x1                     17288  struct array
+  scenario_name               1x2                       130  cell array
+  scenarios                   1x2                     34698  cell array
+  segsize                     1x1                         8  double array
+  spectra                     2x2                   1050864  cell array
+  subj_name                   1x7                        14  char array
+  tags                        1x128                    1024  double array
+
+Grand total is 391771 elements using 3186242 bytes
+
+results{1,1}
+ans = 
+                  errormsg: []
+                  insample: [1x128 double]
+                 outsample: [1x0 double]
+              discriminant: [1x11 double]
+               projections: [1x128 double]
+                  ss_total: 421.5530
+              ss_eachclass: [134.1155 196.4223]
+                  ss_class: 330.5378
+       fc_halfway_cutpoint: 32.7826
+        fc_halfway_classes: [1x128 double]
+        fc_halfway_cmatrix: [2x2 double]
+       fc_mapequal_classes: [1x128 double]
+       fc_mapequal_cmatrix: [2x2 double]
+       fc_mapbayes_classes: [1x128 double]
+       fc_mapbayes_cmatrix: [2x2 double]
+               sg_whichseg: [1x128 double]
+               sg_whichcor: {1x128 cell}
+        xv_halfway_classes: [1x128 double]
+       xv_mapequal_classes: [1x128 double]
+       xv_mapbayes_classes: [1x128 double]
+        xv_halfway_cmatrix: [2x2 double]
+       xv_mapequal_cmatrix: [2x2 double]
+       xv_mapbayes_cmatrix: [2x2 double]
+    discriminant_jdebiased: [1x11 double]
+         discriminant_jsem: [1x11 double]
+        sg_halfway_classes: [1x128 double]
+       sg_mapequal_classes: [1x128 double]
+       sg_mapbayes_classes: [1x128 double]
+        sg_halfway_cmatrix: [2x2 double]
+       sg_mapequal_cmatrix: [2x2 double]
+       sg_mapbayes_cmatrix: [2x2 double]
+                   shuffle: [1x1 struct]
+                   segflip: [1x1 struct]
+ou{1,1}
+ans = 
+           nshuffle: -1
+             xvalid: 1
+       nshuffle_max: 200
+               sub1: 1
+        classifiers: {'halfway'  'mapequal'  'mapbayes'}
+               segs: {1x64 cell}
+             delrad: Inf
+            condmax: Inf
+             nflips: 200
+    nflips_maxtries: 10000
+         nflips_tol: 1
+diary off

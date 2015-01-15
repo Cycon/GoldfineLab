@@ -1,0 +1,16 @@
+function badlist=ChannelListGUILaplacianEKDB12(savename,ChannelList)
+
+% ChannelList={'Fp1','Fp2','AF7','AF8','F7','F3','Fz','F4','F8','FC5','FC1','FC2','FC6','T3','C3','Cz','C4','T4','CP5','CP1','CP2','CP6','T5','P3','Pz','P4','T6','O1','O2'};
+Listbox = uicontrol('Style', 'listbox','Position', [10 10 200 400], 'String', ChannelList,'Max',length(ChannelList));
+
+uicontrol('Position',[300 200 60 60],'String','Done','Callback',{@Done_callback});
+uiwait
+function Done_callback(varargin)
+    index_selected = get(Listbox,'Value');
+    badlist=ChannelList(index_selected);
+     savename=[savename '_BadChannels'];
+     save (savename, 'badlist');
+    close(gcf);
+end
+
+end

@@ -1,0 +1,107 @@
+%this is a script so can pull ALLEEG from the system
+%set defaults
+% Set params for mtspecgramc 
+
+function runSGeeglab(alleeg)
+%need to send it ALLEEG(1) or whichever one to analyze
+
+savename=input('Savename: ','s');
+
+ params.tapers=[3 5];
+ fpassInHz=[0 100];
+ params.pad=-1;
+ params.Fs=alleeg.srate; %need to define this from data later in code
+ params.err=[2 0.05];
+ params.trialave=1; %can change to 0 to look at one snippet at a time.
+ movingwinInSec=[1 0.1];
+
+ disp('Would you like to use default parameters for mtspecgram?');
+ disp(params);
+ fprintf('    fpass (in Hz): [%.0f %.0f]\n',fpassInHz(1), fpassInHz(2));
+ fprintf('    movingwin (in sec): [%.2f %.2f]\n',movingwinInSec(1), movingwinInSec(2));
+ default = input('Return for yes (or n for no): ','s');
+ if strcmp(default,'y') || isempty(default)
+ else
+     disp('define params (Return leaves as default)');
+     p.tapers1=input('NW:');
+     if ~isempty(p.tapers1)
+         params.tapers(1)=p.tapers1;
+     end
+     p.tapers2=input('K:');
+     if ~isempty(p.tapers2)
+        params.tapers(2)=p.tapers2;
+     end
+     p.pad=input('pad:');
+     if ~isempty(p.pad)
+         params.pad=p.pad;
+     end
+     p.err1=input('error type (1 theoretical, 2 jacknife):');
+     if ~isempty(p.err1)
+         params.err(1)=p.err1;
+     end
+     p.err2=input('p-value:');
+     if ~isempty(p.err2)
+         params.err(2)=p.err2;
+     end
+     fpass1=input('starting frequency of fpass:');
+     if ~isempty(fpass1)
+         fpassInHz(1)=fpass1;
+     end
+     fpass2=input('ending frequency of fpass:');
+     if ~isempty(fpass2)
+         fpassInHz(2)=fpass2;
+     end
+     p.mwinsec=input('moving win (in seconds in brackets like [1 0.1]):');
+     if ~isempty(p.mwinsec)
+         movingwinInSec=p.mwinsec;
+     end
+     fprintf('\nparams are now:\n');
+     disp(params);
+     fprintf('movingwin (in sec): [%.2f %.2f]\n',movingwinInSec(1), movingwinInSec(2));
+ end
+
+ 
+% more = 1;
+% SGeeg=1;
+%     while more
+%         for a=1:length(ALLEEG)
+%             fprintf('%.0f. %s\n',a,ALLEEG(a).setname);
+%         end
+%             dataset=input('Which eeglab dataset (Return to End)?'); %choose number
+%         if isempty(dataset)
+%             SGeeg=SGeeg-1;
+%             break
+%         end
+%         alleeg{SGeeg}=ALLEEG(dataset);
+%         SGeeg=SGeeg+1;
+%     end
+
+% for numToRun=1:SGeeg
+    
+%
+%[] need to take data organized as dataxchannelxsnippet and reorganize to
+%be dataxsnippet so can average across them and then do one channel at a
+%time
+
+params.fpass=fpassInHz;
+movingwin=movingwinInSec;
+
+%change to be data x snippet with each channel in a cell
+numChan=size(alleeg.data,1);
+numSnip=size(alleeg.data,3);
+for i=1:numChan
+    for j=1:numSnip
+        dataByChannel{i}(:,j)=alleeg.data(i,:,j);
+    end
+    ChannelList{i}=alleeg.chanlocs(i).labels;
+end
+
+for ij=1:numChan
+    [S{ij},t{ij},f{ij},Serr{ij}]=mtspecgramc(dataByChannel{ij},movingwin,params);
+end
+    
+% end
+
+save([savename '_SG.mat'],'S','t','f','Serr','params','movingwin','ChannelList')
+end
+

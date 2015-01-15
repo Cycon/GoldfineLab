@@ -1,0 +1,76 @@
+%this is a script so can pull ALLEEG from the system
+
+%[]consider option to pick components to plot against each other
+%%
+%prepare for batFisher
+%set fpart and save in the workspace to use by the code
+fStart=8;
+fEnd=24;
+fSpacing=1;
+disp('Prepare fpart for Fisher Discriminant');
+defaultfpart=sprintf('Start at %g, End at %g, Space by %g',fStart,fEnd,fSpacing);
+
+%choose which fpart to use (from workspace, default, or make new)
+if exist('fpart.mat','file')==2 %if fpart.mat is in the folder
+    disp('Using frequency bins (fpart) from saved fpart.mat');
+%     load('fpart.mat');
+%     disp(fpart);   
+else
+    useDefault=input(['Use default frequency bins? (' defaultfpart ') - (Return for Yes or n): '], 's');
+    if isempty(useDefault) || strcmpi(useDefault,'y');
+        fpart(:,1)=(fStart:fSpacing:fEnd-fSpacing)';
+        fpart(:,2)=fpart(:,1)+fSpacing;
+    else 
+        fStart=input('Starting frequency:');
+        fEnd=input('Ending frequency:');
+        fSpacing=input('Spacing:');
+        fpart(:,1)=(fStart:fSpacing:fEnd-fSpacing)';
+        fpart(:,2)=fpart(:,1)+fSpacing;
+        
+    end
+    save fpart fpart
+end
+
+%%
+
+
+more = 1;
+PSeeg=1;
+if ~exist('alleeg','var') %so can create in ICAeeglab in workspace (doesn't run below if alleeg exists)
+    while more
+        for a=1:length(ALLEEG)
+            fprintf('%.0f. %s\n',a,ALLEEG(a).setname);
+        end
+        if PSeeg==2 || PSeeg ==4 || PSeeg==6 %if is an even one
+            dataset=input('Which eeglab dataset to compare to with Fisher? (Return to end?)'); %compare to previouse
+            fisherFiguretitle{PSeeg}=input('Name of Fisher figure: ','s');
+        else
+            dataset=input('Which eeglab dataset (Return to End)?'); %choose number
+        end
+        if isempty(dataset)
+            PSeeg=PSeeg-1;
+            break
+        end
+        alleeg{PSeeg}=ALLEEG(dataset);
+        if PSeeg <2; %since never run more than one ICA at a time
+            eegorica{PSeeg}=input('Run on ICA components or EEG (i - ica, e - eeg)?','s');
+        else
+            eegorica{PSeeg}='e';
+        end
+         PSeeg=PSeeg+1;
+    %     savename=input('Savename: ','s');
+    %     savename=[savename '_PS'];
+    end
+end
+
+for numToRun=1:PSeeg
+    PSresult{numToRun}=runEeglabSpectra(alleeg{numToRun},eegorica{numToRun});
+    if numToRun==2 || numToRun ==4 || numToRun==6
+        subplotFisher(fisherFiguretitle{numToRun},[PSresult{numToRun-1} '.mat'],[PSresult{numToRun} '.mat']);
+        %could put line here to run subplotSpectra
+    end
+end
+
+clear more dataset numToRun PSeeg alleeg eegorica fStart fEnd fSpacing defaultfpart useDefault fisherFiguretitle PSresult
+
+

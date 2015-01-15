@@ -1,0 +1,10 @@
+function numbersTable
+
+[NumbersFiles,NumbersPathname]=uigetfile('*Numbers.mat', ['Select Numbers Files'],'MultiSelect','on');
+
+filenames=sort(NumbersFiles);
+filenames=char(filename
+for i=1:length(filenames)
+    numbersfile=load(fullfile(NumbersPathname,filenames(i,:)));
+    fprintf('%s  FDR: TGT - %.0f, FD - %.0f\n',filenames(i,1:end-26),numbersfile.totalFDRTGT,numbersfile.totalFD_FDRSig')
+end

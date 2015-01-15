@@ -1,0 +1,19 @@
+%this is a script so can pull ALLEEG from the system
+
+%[]consider option to pick components to plot against each other
+%%
+for a=1:length(ALLEEG)
+    fprintf('%.0f. %s\n',a,ALLEEG(a).setname);
+end
+dataset=input('Which eeglab dataset?'); %choose number
+alleeg=ALLEEG(dataset);
+
+clear dataset 
+
+runEeglabSpectra(alleeg);
+
+
+
+    
+
+

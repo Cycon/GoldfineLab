@@ -1,0 +1,90 @@
+function plotDifferenceMap
+
+%takes output of calcDifferenceMap and makes two figures. One is actual
+%difference and other is p-value.
+%
+%[]button to save figure and save at frequency value
+
+[DiffFilename, pathname] = uigetfile('*Diff.mat', 'Select Difference file');
+Diff=load(fullfile(pathname,DiffFilename));
+[ChanlocsFile, ChanlocsPathname] = uigetfile('*.ced', 'Select Chanlocs file for topoplot');
+ChanlocsFullfile=fullfile(ChanlocsPathname,ChanlocsFile);
+
+%open figures
+topoDifferenceFigHandle=figure;
+set(topoDifferenceFigHandle,'Units','normalized','Position',[0.4 0.5 0.6 0.4]); %Left Bottom Width Height
+
+pvalueDifferenceFigHandle=figure;
+set(pvalueDifferenceFigHandle,'Units','normalized','Position',[0.4 0 0.6 0.4]);
+
+%setup control figure
+plotFigure=figure;
+set(plotFigure,'Name',[DiffFilename(1:end-9) ' Topo Map Control'],'Units','normalized','Position',[0 0.5 0.2 0.3]);
+
+uicontrol('Style','text','String','Frequency to plot:','Units','normalized','FontSize',12,'Position',[0 0.5 0.3 0.2],'BackgroundColor',[1 1 1]);
+freqBox=uicontrol('Style','edit','Units','normalized','FontSize',12,'Position',[0.3 0.5 0.2 0.1],'BackgroundColor',[1 1 1]);
+uicontrol('Style','text','String','+/-','Units','normalized','FontSize',12,'Position',[0.5 0.5 0.1 0.1],'BackgroundColor',[1 1 1]);
+rangeBox=uicontrol('Style','edit','String',1,'Units','normalized','FontSize',12,'Position',[0.6 0.5 0.2 0.1],'BackgroundColor',[1 1 1]);
+uicontrol('Style','text','String','PS plotting range:','Units','normalized','FontSize',12,'Position',[0 0.3 0.3 0.2],'BackgroundColor',[1 1 1]);
+psBox=uicontrol('Style','edit','String',3,'Units','normalized','FontSize',12,'Position',[0.3 0.3 0.2 0.1],'BackgroundColor',[1 1 1]);
+uicontrol('Units','normalized','Position',[0.7 0.2 0.2 0.2],'String','Plot','FontSize',12,'Callback',{@Done_callback});
+
+uiwait
+
+function Done_callback(varargin)
+    plotFreq = str2double(get(freqBox,'String'));
+    range=str2double(get(rangeBox,'String'));
+    psRange=str2double(get(psBox,'String'));
+    uiresume
+    plotDifferenceMapDo(plotFreq,range,psRange)
+end
+
+
+% plotFreq=input('Frequency to plot at: ');
+    function plotDifferenceMapDo(plotFreq,range,psRange)
+    pFR=[Diff.f>(plotFreq-range) & Diff.f<(plotFreq+range)]; %index for plotting Frequency range (2hz since is 2W, or could calculate)
+    powerfiguretitle=sprintf('%s power difference %2.0f +/- %.0fHz',DiffFilename(1:end-9), plotFreq,range); 
+    pvaluefiguretitle=sprintf('%s pvalue %2.0f +/- %.0fHz',DiffFilename(1:end-9), plotFreq,range); 
+
+    %%
+    %calculate average difference around plotting frequency
+    for pd=1:length(Diff.actualDiff) %for each channel
+        diffValue(pd)=mean(Diff.actualDiff{pd}(pFR));
+        diffPvalue(pd)=mean(Diff.p_value{pd}(pFR));
+        
+        elseif pvalue{ip}==0 %don't want it equal to 0 since will -> inf. So make it smallest non-zero by dividing by # of flips
+            pvalue{ip}=1/length(fisherOutput.results{1}.segflip.segflips);
+    end
+
+
+%%
+
+
+    %want to flip color map so that red is more for condition 2 (negative
+    %values) to match plotSigFreq plots.
+    colormap('default');
+    PScmap=colormap;
+    pcmap=colormap(bone);
+
+    figure(topoDifferenceFigHandle); %this makes this figure current
+    set(topoDifferenceFigHandle,'Name',powerfiguretitle);
+    topoplot(diffValue,ChanlocsFullfile,'maplimits',[-psRange psRange],'contourvals',diffPvalue,'colormap',flipud(PScmap)); %runs code from eeglab
+    colorbar;
+    annotation('textbox',[0.72 0.8 0.15 0.1],'String','More Condition 1');
+    annotation('textbox',[0.72,0.2 0.15 0.1],'String','More Condition 2');
+
+    %topoplot of p-values at each channel (-log10 so accentuates
+    %differences at low values)
+    figure(pvalueDifferenceFigHandle); %this makes this figure current
+    set(pvalueDifferenceFigHandle,'Name',pvaluefiguretitle);
+    topoplot(-log10(diffPvalue),ChanlocsFullfile,'maplimits',[0 3],'colormap',pcmap);
+    
+    colorbar('YTick',[1 2 3],'YTickLabel',{'p=0.1','p=0.01','p=0.001'},'FontSize',12); %designed for 1000 segflips
+    end
+end
+
+
+
+
+
+        

@@ -1,0 +1,110 @@
+function savename=runEeglabSpectra(alleeg,eegorica,combineddata,name)
+
+%called by PSeeglab
+
+%runs eeglabSpectra on data sent from eeglabSpectra. Kept separate since
+%eeglabSpectra pulls from active workspace
+
+%%
+%set defaults and choose datatype
+%If Fs is specified in Hz, windows have to specified in seconds. fpass
+%should also be specified in Hz. so, Fs=256, movingwin=[1 0.2] and fpass=[0
+%50]. 
+
+% if nargin <3
+%     combineddata=0;
+% end
+
+frequencyRecorded=alleeg.srate;
+params.tapers = [3 5];
+params.pad=-1;
+params.Fs=frequencyRecorded;
+params.fpass=[0 100];
+% params.trialave=1; %not needed for ULT and don't want passed on to
+% batCrxSpectra
+params.err=[2 0.05];
+chanlocs=alleeg.chanlocs;
+movingwinInSec=[3 3]; %in seconds since fpass in Hz
+
+icadata=0; %use to determine if running on components or eeg in subplot program
+if nargin>2 %if running on one combined dataset
+    data=combineddata;
+%     name=input('Savename for combined Spectra:','s');
+    savename=[name '_EEG_PS'];
+else
+    combineddata=0;
+    name=0;
+    % eegorica=input('Run on ICA components or EEG (i - ica, e - eeg)?','s');
+    if strcmp(eegorica,'i')
+        data=alleeg.icaact;
+        icadata=1;
+        savename=sprintf('%s_ICA_PS',alleeg.setname);
+    elseif strcmp(eegorica,'e')
+        data=alleeg.data; %may not be accurate if components removed, need to check
+        savename=sprintf('%s_EEG_PS',alleeg.setname);
+    else
+        return
+    end
+end
+
+numSnippets=size(data,3);
+%%
+numChannels = size(data,1); %or components
+%data is ch x data x epochs. look at 1 channel at a time. With squeeze
+%command it becomes data x epochs which mtspectrumc takes and averages
+%across.
+
+%%
+%cut data into equal smaller length snippets so similar to what I do with
+%mtspectrumc_ULT (rather than running on 9 or 10 second snippets). 
+%[] modify below to run on the cut data
+
+%[] put in array created for S and Serr but need to figure out the size of
+%it! 
+% for i = 1:numChannels
+%     channelData=detrend(squeeze(data(i,:,:))); %look at one channel organized by data x trials
+%     %detrend does one column at a time so okay here (squeeze removes 1st
+%     %singelton row)
+%     [S{i},f{i},Serr{i}]=mtspectrumc(channelData,params);
+% end;
+
+%use mtspectrumc_ULT so use more of the data and more similar to current
+%results. Use reshape and don't forget it detrends in it. Need to
+%transpose. Need to make sMarkers
+sMarkers = zeros(size(data,3),2);
+for s=1:size(sMarkers,1)
+    sMarkers(s,:)=[(s-1)*size(data,2)+1 s*size(data,2)];
+end
+dataReshaped=reshape(data,size(data,1),size(data,2)*size(data,3)); %channels by datapoints (snippets stacked)
+[S,f,Serr]=mtspectrumc_unequal_length_trials(dataReshaped',movingwinInSec,params,sMarkers);
+
+
+%%
+if ~icadata
+    %need to send to batCrxSpectra to get cut and prepared for TGT and Fisher
+    %It wants data with each snippet per cell and organized as (data x channels)
+    %probably don't want to do this for ICA data since won't be comparing
+    %components yet. Don't need to detrend here 
+
+    dataBySnippet{1}=zeros(size(data,1),size(data,2));
+    dataBySnippet=repmat(dataBySnippet,1,size(data,3));
+     for is = 1:numSnippets
+          dataBySnippet{is}=(data(:,:,is))'; %transposed and put in cell form for batCrxSpectra
+     end
+
+    [spectraByChannel,fMtSpectrumc,dataCutByChannel,neighborTag]=batCrxSpectra('input1','input2',0,params,movingwinInSec(1),dataBySnippet,params.Fs); 
+    %inputs 1 and 2 are just placeholders. 0 is to tell batCrxSpectra to not
+    %save results
+    %[] need code to Change ordering of channels
+    for cl=1:length(chanlocs)
+        ChannelList{cl}=chanlocs(cl).labels;
+    end
+    
+    savename(savename==' ')=[];% to remove spaces in the name of the file
+    save (savename,'S','f','Serr','sMarkers','frequencyRecorded','numChannels','icadata','ChannelList','spectraByChannel','fMtSpectrumc','dataCutByChannel','neighborTag','params');
+else
+    save (savename,'S','f','Serr','frequencyRecorded','numChannels','icadata');
+    
+    fprintf('%s created\n',savename);
+end
+

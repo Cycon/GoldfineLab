@@ -1,0 +1,344 @@
+function [contiguousMoreThanFR,contiguousSigFreq]=plotSigFreq(figuretitle,spectra1label, spectra2label,TGToutput, ChannelList,plottingRange)
+
+%Can be run on own by typing plotSigFreq('figuretitle','spectra 1
+%label','spectra 2 label') and then will popup windows for TGT output. Also
+%is called from subplotSpectra via subplotSpectraUI
+%
+%plots on one graph the areas of significant difference between spectra 1
+%and spectra 2 as calculated by the two group test from batTGT.
+%exports frequencies that are significant as well as a list of those
+%greater than 2W (in boxes)
+%
+% version 1.1 2/26 added option to type in channels that shouldn't be
+         % plotted, appears as black line and ensure that spelling is correct. Added legend.
+%version 1.2 3/3 give user otpiont to pull in Fisher results and display to
+             %left of each channel label. Consider putting slope in as
+             %well.
+%version 1.3 3/22 calls ChannelListGUI to allow user to choose list of
+            %channels to exclude (creates a string of bad channels). Best is to open
+            %the subplot PS and then run this program so can have the badlist chooser
+            %displayed alongside the plots. Also gives option to use
+            %previous saved Badlist (saved by ChannelListGUI)
+%version 1.4 3/26/10 puts horizontal bars on the left representing the
+            %p-value
+%version 1.5 4/6/10 ChannelGUI changed to have table allowing user to select starting frequencies
+            %for bad channels. This code needs to take this value and plot
+            %x's starting at that value
+%%
+%If called directly, need to get data from subplotSpectra output
+if nargin<3
+    disp('Next time type plotSigFreq(''figuretitle'',''spectra1label'',''spectra2label''');
+    figuretitle=input('figuretitle:','s');
+    spectra1label=input('label for spectra 1:','s');
+    spectra2label=input('label for spectra 2:','s');
+end
+if nargin<4
+    [filename2, pathname2, filterindex2] = uigetfile('*List.mat', 'Select TGTOutput');
+    TGToutputContigList=load(fullfile(pathname2,filename2));
+    TGToutput=TGToutputContigList.TGToutput;
+    ChannelList=TGToutputContigList.ChannelList;
+end;
+    
+plotInsigResults=1; %make =1 to plot * for sig freq not over 2W Hz
+
+%%
+%define defaults
+numChannels=length(TGToutput);
+f=TGToutput{1}.f;
+frequencyRecorded=max(f);
+sampleLength=length(f)/max(f);%length of cuts (moving window)
+
+if nargin <6
+    plottingRange=[5 40];
+end
+
+plottingFreqIndeces=(f>=plottingRange(1) & f<=plottingRange(2));
+frequencyResolution=TGToutput{1}.NW/sampleLength*2; %2W Hz is an allowed frequency Resolution
+%Consider changing frequencyResolution manually in the graphic
+
+%%
+% Give user option to input results from a Fisher analysis and plot to left
+% of each channel label. Important that the Fisher information is available
+% as an annotation above (Fisher 2 to 24 by 2 / % x-val correct, p-val of
+% within/total variance vs shuffles). If this occurs, set a flag so that in
+% the plotting code there is a new section for displaying this information
+% and putting another annotation. Also will need to move current annotation
+% to the top. Also consider putting slope information in.
+
+plotFisherResults=0;
+ChanlocsFile=[]; %so won't plot unless selected
+if strcmpi(input('Would you like to display results of Fisher test (y - yes)?','s'),'y')
+    [filename1, pathname1, filterindex1] = uigetfile('*FisherData.mat', 'Select Fisher Output');
+    fisherOutput=load(fullfile(pathname1,filename1));
+    plotFisherResults=1;
+    
+    [ChanlocsFile, ChanlocsPathname] = uigetfile('*.ced', 'Select Chanlocs file for topoplot or Cancel to not plot');
+end
+
+
+%%
+%calculate frequencies that have contiguous significant results > 2W Hz
+% and only look at ones between plottingRange and differentiate based on
+% which condition is higher
+%want to display this to the left of the graph or only plot this (would be
+%nice to dynamically change frequencyResolution from the graph).
+
+for i=1:length(TGToutput) %for each channel
+    for j=1:2 %for each condition, 1 is condition 1 and 2 is condition 2
+        contiguousMoreThanFROnes{i}{j}=zeros(1,length(f)); %set it to be all 0s at first
+        if any(TGToutput{i}.AdzJKC{j}(plottingFreqIndeces))%to ensure it only runs if there is a 1 or else contiguous.m may crash        
+            contiguousAdzJKOnes{i}{j}=contiguous(TGToutput{i}.AdzJKC{j},1);
+%             contiguousAdzJKOnes{i}{j}=contiguous(TGToutput{i}.AdzJKC{j}(plottingFreqIndeces),1); %show contiguous sig freq
+            %between plottingRange only, though may not need this since
+            %only plot those in that range below!
+            contiguousSigFreq{i}{j}=f(contiguousAdzJKOnes{i}{j}{2}); %uses f to get contig in units of freq
+            cSFcolumn2{i}{j}=contiguousSigFreq{i}{j}(:,2);%gives the second column only, useful for end freq value below
+            indexMoreThanFR{i}{j}=(contiguousSigFreq{i}{j}(:,2)-contiguousSigFreq{i}{j}(:,1))>frequencyResolution;
+            %gives index of where contiguous 1s are over more than
+            %frequencyResolution number of frequencies
+            if any(indexMoreThanFR{i}{j}) %in case no spots with contiguous 1s
+                contiguousMoreThanFR{i}{j}=contiguousSigFreq{i}{j}(indexMoreThanFR{i}{j});%gives starting frequencies where continues more than 2W
+                contiguousMoreThanFR{i}{j}(:,2)=cSFcolumn2{i}{j}(indexMoreThanFR{i}{j});%gives the end frequencies
+                for k=1:size(contiguousMoreThanFR{i}{j},1)
+                    contiguousMoreThanFROnes{i}{j}(f>=contiguousMoreThanFR{i}{j}(k,1) & f<=contiguousMoreThanFR{i}{j}(k,2))=1;
+                    %set it equal to 1 where the contiguous frequencies are
+                    %more than the frequency resolution
+                end
+            else
+                contiguousMoreThanFR{i}{j}=[];
+            end
+        else
+            contiguousMoreThanFR{i}{j}=[];
+        end
+    end
+end
+
+%%
+%to set channels to not plot
+badlist={0};
+%this part below is in one if loop so none of it runs if press Return
+exclude=input('Would you like to exclude bad channels from summary plot (y - yes, p-use previous, Return-skip)?','s');
+if strcmpi(exclude,'y')
+        badlist=ChannelListGUI(figuretitle,ChannelList);
+elseif strcmpi(exclude,'p')
+    [filename, pathname] = uigetfile('*BadChannels.mat', 'Select Bad Channel List');
+    load(fullfile(pathname,filename)); %this loads previous one and is already called badlist
+    if isempty(badlist) %goes on to non GUI method if user selects none from GUI
+        badlist=inputbadlist;
+        %determine if any in the list typed in don't match spelling correctly
+        reruninputbadlist=0;
+        for j=1:length(badlist)
+            if isempty(badlist{j}) %end when reach an empty cell at end of list
+            elseif ~any(strcmp(badlist{j},ChannelList)) %if none of the Channels are spelled the same as one typed in
+                fprintf('%s is spelled wrong, start over\n',badlist{j})
+                reruninputbadlist=1;
+            end
+        end
+        %if spelling wrong, redo list entry
+        if reruninputbadlist
+            badlist=inputbadlist;
+        end
+    end
+
+
+end
+
+%below for user to input channels they don't want to plot
+function badlist=inputbadlist
+
+    fprintf('Which channels would you like to exclude from the significant frequency summary plot?\n')
+    disp(ChannelList);
+    badlist=input('Enter a cell array of strings like {''Fp1'' ''Fp2''), or press Return to enter one at a time:\n');
+    if isempty(badlist)
+        disp('Enter 1 at a time, ensure capitilization the same');
+        morechannels=1;
+        i=1;
+        while morechannels
+            badlist{i}=input('channel (or Return to stop):','s');
+            if isempty(badlist{i});
+                morechannels=0;
+            end
+            i=i+1;
+        end
+    end    
+
+end
+    
+%%
+%below plots starting with the front of the head but plotting it at a value equal to the number of channels
+%so appears at the top of the plot.
+%futher channels plot at progressively smaller values by subtracting larger
+%i's.
+figure;
+titletext=sprintf('Two group test calculated with p-value: %.2f and 2W Frequency Resolution = %.0f Hz, \nfrom  %.0f to %.0f Hz',TGToutput{1}.p,frequencyResolution, plottingRange(1),plottingRange(2));
+
+set(gcf,'Name',[figuretitle ' - Sig Freq']);
+% annotation(figure(gcf),'textbox','String',annotationtext,'FitBoxToText','on','FontSize',9,...
+%     'Position',[0.01635 0.5581 0.07671 0.3851]); %this uses normalized units.
+
+
+for ic=1:numChannels
+    badlistCheck=strcmp(ChannelList{ic},badlist(1,:)); %gives logical of location of ChannelList in badlist if present
+    if any(badlistCheck); %if the particular channel matches any channel in the badlist (strcmp produces a vector so need 'any')
+        badStartFreq=badlist{2,badlistCheck}; %gets the value of starting freq
+        %need to change to only plot x's based on 1st row for old version
+        %and new version of badlist has 2nd row with starting frequencies
+        %(default to 0). Also need to change to plot this on top of the
+        %regular data! So need to plot the regular data first and plot this
+        %as well, not instead of. Set the plotting range of x's, to start at
+        %plottingRange(1) if if badlist is there or below and to start at
+        %badlist if is higher. Set x's to end at plottingRange(2); then
+        %need code to plot the actual values from plottingRange(1) to lower
+        %bound of badlist ONLY if x's start higher (make a flag).
+       
+       %next plot clean data below where the x's start
+       if badStartFreq>plottingRange(1)
+           plottingFreqIndecesForXs=(f>=badStartFreq & f<=plottingRange(2));
+           plot(f(plottingFreqIndecesForXs),(numChannels-ic+1).*(ones(1,sum(plottingFreqIndecesForXs))),'x','color',[112 138 144]./255,'HandleVisibility','off'); %put ones for all locations, using sum to get 1:150 or whatever
+           hold on;
+           plottingFreqIndecesForCleanData=(f>=plottingRange(1) & f<=badStartFreq);
+           plot(f(plottingFreqIndecesForCleanData),(numChannels-ic+1).*(contiguousMoreThanFROnes{ic}{1}(plottingFreqIndecesForCleanData)),'bs');
+           plot(f(plottingFreqIndecesForCleanData),(numChannels-ic+1).*(contiguousMoreThanFROnes{i}{2}(plottingFreqIndecesForCleanData)),'rs');
+            if plotInsigResults
+                plot(f(plottingFreqIndecesForCleanData),(numChannels-ic+1).*(TGToutput{ic}.AdzJKC{1}(plottingFreqIndecesForCleanData)),'bo');
+                hold on;
+                plot(f(plottingFreqIndecesForCleanData),(numChannels-ic+1).*(TGToutput{ic}.AdzJKC{2}(plottingFreqIndecesForCleanData)),'r*');
+            end
+       else
+           plot(f(plottingFreqIndeces),(numChannels-ic+1).*(ones(1,sum(plottingFreqIndeces))),'x','color',[112 138 144]./255,'HandleVisibility','off');
+           hold on;
+       end
+   else
+       p1=plot(f(plottingFreqIndeces),(numChannels-ic+1).*(contiguousMoreThanFROnes{ic}{1}(plottingFreqIndeces)),'bs');
+       hold on;
+       p2=plot(f(plottingFreqIndeces),(numChannels-ic+1).*(contiguousMoreThanFROnes{ic}{2}(plottingFreqIndeces)),'rs');
+       if plotInsigResults
+          hasbehavior(p1,'legend',false); %this hides the legend of boxes above
+          hasbehavior(p2,'legend',false);
+          p3=plot(f(plottingFreqIndeces),(numChannels-ic+1).*(TGToutput{ic}.AdzJKC{1}(plottingFreqIndeces)),'bo');
+          p4=plot(f(plottingFreqIndeces),(numChannels-ic+1).*(TGToutput{ic}.AdzJKC{2}(plottingFreqIndeces)),'r*');
+       end
+       legend(spectra1label, spectra2label)
+   end
+end
+%%
+
+%put here if statement for Fisher and then change ChannelLabels. Make new
+%variable for Y Labels that by default is flipped ChannelList but changes
+%to Fisher Results and then Channel List.
+
+yLabels=fliplr(ChannelList);
+    
+if plotFisherResults
+   percentCorrectXvalid=fliplr(fisherOutput.percentCorrectMapbayesSegs); %not used
+   pvalue=fliplr(fisherOutput.p_segflip);
+   ChannelNames=fliplr(ChannelList);
+   for iy=1:length(ChannelList)
+       if any(strcmp(ChannelNames{iy},badlist(1,:))) %suppress @ sign if channel is x'd out
+           yLabels{iy}=ChannelNames{iy};
+       elseif pvalue{iy}<=0.05
+           yLabels{iy}=['@ ' ChannelNames{iy}];
+%        elseif pvalue{iy}<=0.1
+%            yLabels{iy}=['* ' ChannelNames{iy}];
+       else
+           yLabels{iy}=ChannelNames{iy};
+%        yLabels{iy}=sprintf('%.2f\t%.2f\t%s',percentCorrectXvalid{iy}, pvalue{iy}, ChannelNames{iy});
+       end
+   end
+   annotationtext=sprintf('@ means Fisher result significant p<=0.05 \n using %.0f to %.0f Hz',min(fisherOutput.fpart(1)),max(fisherOutput.fpart(:,2)));
+%    annotationtext=sprintf('Fisher Results %.0f to %.0f: \nXvalid%%  p-value',min(fisherOutput.fpart(1)),max(fisherOutput.fpart(:,2)));
+   annotation('textbox','FitBoxToText','on',...
+    'Position',[0.01836 0.94 0.2289 0.055],'String',annotationtext,'FontSize',12);
+
+%%
+    %bar graph for significance level. Do -log10 to make it positive and
+    %accentuate very small values.
+    for ip=1:length(pvalue)
+        if any(strcmp(ChannelNames{ip},badlist(1,:))) %suppress p-value display if channel is x'd out. Note ChannelNames is ChannelList flipped
+           pvalue{ip}=1;
+        elseif pvalue{ip}==0 %don't want it equal to 0 since will -> inf. So make it smallest non-zero by dividing by # of flips
+            pvalue{ip}=1/length(fisherOutput.results{1}.segflip.segflips);
+        end
+        pdisplay{ip}=-log10(pvalue{ip}); %shouldn't this be in the if loop as a 2nd else? No because it's pdisplay not pvalue.
+    end
+    barh(cell2mat(pdisplay)); %makes horizontal bars at each y level.
+
+end
+
+%%
+
+set(gca,'YLim',[1 numChannels+0.5],'YTick',[1:numChannels],'YTickLabel',yLabels,...
+    'XTick',[0:5:ceil(max(f(plottingFreqIndeces)))],'XLim',[0 ceil(max(f(plottingFreqIndeces)))+5],'fontsize',14);
+title(titletext);
+grid on;
+
+
+%%
+
+%%
+%make topoplot of -logpvalues of fisher
+if ~isempty(ChanlocsFile)
+    figure;
+    ChanlocsFullfile=fullfile(ChanlocsPathname,ChanlocsFile);
+    topoplot(fliplr(cell2mat(pdisplay)),ChanlocsFullfile,'maplimits',[0 4]); %runs code from eeglab
+    %note pdisplay is in flipped order from above so flipped back.
+    colorbar('YTick',[1 2 3],'YTickLabel',{'p=0.1','p=0.01','p=0.001','p=0.0001'},'FontSize',12);
+end
+end
+% savename=sprintf('%s_contiguousMoreThanFR_%f_to %f',figuretitle,plottingRange(1),plottingRange(2));
+% save(savename,'contiguousMoreThanFR');
+
+%[] next write to left of each the significant ranges >2W
+%[]title same as prior
+
+%%
+%Display frequencies with >frequency Resolution # f contiguous frequencies
+
+% fprintf('Frequency Ranges greater than Frequency Resolution (%.0f Hz) by Channel:\n',frequencyResolution);
+% for ic=1:length(ChannelList)
+%     fprintf('Channel %s, more power seen in:',ChannelList{ic});
+%     
+%     fROI=[0 50]; %frequency Range of Interest
+%     
+%     if ~any(contiguousMoreThanFR{ic}) %if no sig frequency ranges
+%        fprintf('None\n');
+%     else       
+%         %below says if any frequency within the range is within the
+%         %frequencies of interest, then put the frequency range in the
+%         %matrix contMTFRwithinFROI for display. []would be better to just
+%         %display it here but need to first convert it to .dz index then
+%         %determine direction then display it alongside with direction!
+%         contMTFRwithinFROI{ic}=[]; %so if none in frequency Range its left as []
+%         for rowNum=1:size(contiguousMoreThanFR{ic},1)
+%             frequencyRangeInCMTFR{ic}{rowNum}=[contiguousMoreThanFR{ic}(rowNum,1):contiguousMoreThanFR{ic}(rowNum,2)];
+%             %frequencyRangeInCMTFR needs to be cell array since different
+%             %number of columns each time possible
+%             if any (fROI(1)<frequencyRangeInCMTFR{ic}{rowNum} & frequencyRangeInCMTFR{ic}{rowNum}<fROI(2))
+%                 contMTFRwithinFROI{ic}(rowNum,:)=contiguousMoreThanFR{ic}(rowNum,:);
+%             end;
+%         end  
+%         
+%         if isempty(contMTFRwithinFROI{ic})
+%             fprintf('None between %.0f and %.0f Hz\n',fROI(1),fROI(2));
+%         else
+%     %determine dz where significant frequencies are found to label change as first or 2nd condition larger:
+%             cMTFRindex{ic}=(contMTFRwithinFROI{ic}(:,1)).*(sampleLength.*spectra1.frequencyRecorded.*0.5)./(spectra1.params.fpass(2)*spectra1.frequencyRecorded);
+%     %convert significant frequency ranges back to indexes out of units from TGT (opposite
+%     %formulat to above)
+%             dzAtSigFreq{ic}=TGToutput{ic}.dz(int32(cMTFRindex{ic}));
+%     %only care about 1st half of dzAtSigFreq
+%     
+%             for jc=1:length(dzAtSigFreq{ic})
+%                 if dzAtSigFreq{ic}(jc,1)>0
+%                     fprintf('%s from %.2f to %.2f Hz (%.0f Hz)\n',spectra1label,contMTFRwithinFROI{ic}(jc,1),contMTFRwithinFROI{ic}(jc,2),...
+%                     contMTFRwithinFROI{ic}(jc,2)-contMTFRwithinFROI{ic}(jc,1));
+%                 else
+%                 fprintf('%s from %.2f to %.2f Hz (%.0f Hz)\n',spectra2label,contMTFRwithinFROI{ic}(jc,1),contMTFRwithinFROI{ic}(jc,2),...
+%                 contMTFRwithinFROI{ic}(jc,2)-contMTFRwithinFROI{ic}(jc,1));
+%                 end
+%             end
+%         end
+%     fprintf('\n');
+%     end
+
+    

@@ -1,0 +1,24 @@
+%runs ICA on two datasets after combining them, saves the datasets, opens
+%the scroll of the components as well as the components and starts program
+%to run powerspectra on them.
+
+figuretitle=input('Figure Title: ','s');
+[ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, 1,'retrieve',[1 2] ,'study',0); 
+EEG = eeg_checkset( EEG );
+EEG = pop_runica(EEG, 'icatype','runica','concatcond','on','options',{'extended' 1});
+[ALLEEG EEG] = eeg_store(ALLEEG, EEG, CURRENTSET);
+[ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, [1 2] ,'retrieve',1,'study',0); 
+EEG = pop_saveset( EEG, 'savemode','resave');
+[ALLEEG EEG] = eeg_store(ALLEEG, EEG, CURRENTSET);
+[ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, 1,'retrieve',2,'study',0); 
+EEG = pop_saveset( EEG, 'savemode','resave');
+[ALLEEG EEG] = eeg_store(ALLEEG, EEG, CURRENTSET);
+[ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, [1 2] ,'retrieve',1,'study',0);
+pop_eegplot( EEG, 0, 1, 1);
+pop_selectcomps(EEG, [1:length(EEG.icachansind)] );
+eeglab redraw
+alleeg{1}=ALLEEG(1);
+eegorica{1}='i';
+PSeeglab; %runs automatically from above two lines, name comes from alleeg.setname
+subplotEeglabSpectra(figuretitle,'ica');
+clear alleeg eegorica figuretitle

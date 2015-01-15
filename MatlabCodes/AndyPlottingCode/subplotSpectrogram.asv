@@ -1,0 +1,80 @@
+function subplotSpectrogram(figuretitle)
+
+%[]Add option to plot high and low bound of Serr results.
+%[] consider option to change the plotting range to zoom in
+%[] figure out how to change the window and level interactively
+%[] consider option to save goodlist names and indeces and reload the next
+%time in case replotting with different plotting Range.
+%change plotting routine to a function that runs when the Done button is
+%pushed. Might allow for replottin
+
+if nargin<1
+    figuretitle=input('Figuretitle:','s');
+end
+
+plottingRange=[4 24];%range to plot, may want to ask user to choose or change default
+fprintf('plotting range set at %.0f to %.0f Hz',plottingRange(1),plottingRange(2));
+if strcmp(input('Change plotting range? (y-yes)','s'),'y');
+    plottingRange(1)=input('Starting Frequency:');
+    plottingRange(2)=input('Ending Frequency:');
+    if length(plottingRange)<2
+        return
+    end
+end
+[spectrogramFile, pathname] = uigetfile('*SG.mat', 'Select spectrogram to plot');
+spectrogram=load(fullfile(pathname,spectrogramFile));
+ChannelList=spectrogram.ChannelList;
+t=spectrogram.t;
+S=spectrogram.S;
+Serr=spectrogram.Serr;
+f=spectrogram.f;
+params=spectrogram.params;
+
+scrsz = get(0,'ScreenSize'); %for defining the figure size, need to change if want on a 2nd monitor
+
+
+
+%%
+%choose channels to plot (could also change this to pick BadChannelList
+%output of plotSigFreq for channels to suppress)
+% figure; %may want this to be it's own figure or plot on top of sigFreq so
+% can see which one you want to plot.
+disp('Choose channels to plot');
+Listbox = uicontrol('Style', 'listbox','Position', [10 10 80 400], 'String', ChannelList,'Max',length(ChannelList)-1,'Value',[]);
+uicontrol('Position',[100 60 60 60],'String','Done','Callback',{@Done_callback});
+ uiwait %this command seems necessary to ensure it waits to select channels and press done. it
+%stops waiting when window is closed though could also type uiresume
+function Done_callback(varargin)
+    index_selected = get(Listbox,'Value');
+    goodlist=ChannelList(index_selected);
+%     savename=[savename '_BadChannels'];
+%     save (savename, 'badlist');
+%     close(gcf); %may want to have it close figure but I prefer to leave
+%     open the sigFreq plot
+    uiresume
+end
+
+
+%%
+%plot with subplot command for number of channels don't forget code to
+%enlarge. also may want to give user option to zoom on f (so may then
+%change batSpectrogram to do all the spectra and decrease the amount you
+%see here).
+
+figure
+%set(gcf,'Name',[figuretitle '-Figure' num2str(i)], 'Position',[1 1 scrsz(3)*0.95 scrsz(4)*0.9]); %big size
+set(gcf,'Name',figuretitle, 'Position',[1 1 scrsz(3)*0.8 scrsz(4)*0.9]); %small size
+
+
+for p=1:length(goodlist)
+    plottingFreqIndeces=f{index_selected(p)}>plottingRange(1) & f{index_selected(p)}<plottingRange(2);
+    subplot(length(goodlist),1,p)
+    imagesc(t{index_selected(p)},f{index_selected(p)}(plottingFreqIndeces),10*log10(S{index_selected(p)}(:,plottingFreqIndeces))');
+    ylabel(goodlist{p},'FontSize',12);
+    xlabel('seconds','FontSize',12);
+end
+titlename=sprintf('Spectrogram calculated with NW=%.0f and K=%.0f, pad=%.0f',params.tapers(1),params.tapers(2),params.pad);
+title(titlename);
+
+allowaxestogrow;
+end

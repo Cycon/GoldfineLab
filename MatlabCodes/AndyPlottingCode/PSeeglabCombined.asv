@@ -1,0 +1,104 @@
+%this is a script so can pull ALLEEG from the system
+%designed to concatenate multiple eeg runs and send to runEeglabSpectra
+%Also determines min length to ensure all the same.
+%%
+%need to change to add to previous and only send one to runEeglabSpectra
+%need to load them all in and then determine the minimum length and then
+%combine them and send them.
+
+
+% if ~exist('ALLCOM','var')
+%     eeglab
+% end
+% 
+% if ~isempty( ALLEEG )
+%     ALLEEG = pop_delset( ALLEEG, [1:length(ALLEEG)] );
+% end
+
+function PSeeglabCombined
+%%
+
+ds=1;
+
+while 1; %to run multiple in a row
+    PSeeg=1;
+    if ~strcmpi(input('Use previous concantenated set (Return - no, y- yes)','s'),'y')
+        while 1
+            [setfilename, pathname] = uigetfile('*.set', 'Select PS file to concatenate, (Cancel to stop)');
+            if setfilename==0; %if press cancel for being done
+                PSeeg=PSeeg-1;
+                break
+            end
+            EEG = pop_loadset('filename',setfilename,'filepath',pathname);
+%             [ALLEEG, EEG, CURRENTSET] = eeg_store( ALLEEG, EEG, 0 );    
+            data{PSeeg}=EEG.data;
+            datapoints(PSeeg)=size(data{PSeeg},2);
+            PSeeg=PSeeg+1;
+        end
+    
+
+    % if ~strcmpi(input('Use previous concantenated set (Return - no, y- yes)','s'),'y')
+    %     while 1
+    %         for al=1:length(ALLEEG)
+    %             fprintf('%.0f. %s\n',al,ALLEEG(al).setname);
+    %         end
+    %         dataset=input('Which eeglab dataset to combine (Return to End)?'); %choose number
+    %         if isempty(dataset)
+    %             PSeeg=PSeeg-1; %so have accurate count for number of datasets
+    %             break
+    %         end
+    %         alleeg=ALLEEG(dataset); %to send other information to runEeglabSpectra
+    %         data{PSeeg}=ALLEEG(dataset).data;
+    %     %     alleeg{PSeeg}=ALLEEG(dataset);
+    %         datapoints(PSeeg)=size(data{PSeeg},2);
+    %         PSeeg=PSeeg+1;
+    %     end
+    % 
+    % for l=1:length(alleeg)
+    %     datapoints{l}=size(alleeg.data,2);
+    % end
+        minlength=(min(datapoints)); %pick shortest length snippets so all are the same, % could change to set all to a predefined length[]
+
+        %problem with below if assume that all runs were same length
+        
+        combineddata{ds}=[];
+        for cd=1:PSeeg
+%             combineddata{ds}(:,:,((cd-1)*size(data{cd},3)+1):cd*size(data{cd},3))=data{cd}(:,1:minlength,:); %send all same length and add to previous
+            combineddata{ds}(:,:,((cd-1)*size(data{cd},3)+1):cd*size(data{cd},3))=data{cd}(:,1:minlength,:); %send all same length and add to previous
+        end
+        alleeg=EEG;
+        savenameCombined{ds} = input('Name to save combined data as: ','s');
+        combinedDataSaved=combineddata{ds};
+        save([savenameCombined{ds} '_CombinedData'],'alleeg','combinedDataSaved');
+        
+        if ~strcmp(input('Run another dataset (y-yes, otherwise Return to stop):','s'),'y')
+%             eeglab redraw;
+            break
+        else
+            ds=ds+1;
+        end
+    else
+        [previousCombinedDataset, pathname] = uigetfile('*CombinedData.mat', 'Select previous combined dataset');
+        previous=load(fullfile(pathname,previousCombinedDataset));
+        alleeg=previous.alleeg;
+        savenameCombined{ds}=previousCombinedDataset(1:end-17);
+        combineddata{ds}=previous.combinedDataSaved; %originally combineddata but had to change save command above
+        if ~strcmp(input('Run another dataset (y-yes, otherwise Return to stop): ','s'),'y')
+            break
+        else
+            ds=ds+1;
+        end
+    end
+end    
+    
+
+for j=1:ds %to run multiple in a row
+    runEeglabSpectra(alleeg,'e',combineddata{j},savenameCombined{j});
+end
+% for numToRun=1:PSeeg
+%     runEeglabSpectra(alleeg{numToRun},'e',combineddata); %ignores alleeg and eegdata and uses combineddata
+% end
+
+% clear datapoints PSeeg minlength combineddata data dataset cd al alleeg usePrevious savenameCombined previous setfilename pathname ds
+
+

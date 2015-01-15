@@ -1,0 +1,14 @@
+function avgdiff5to50=Sderivative(varargin)
+
+for i=1:length(varargin)
+    f{i}=varargin{i}.f{1}*varargin{i}.frequencyRecorded;
+    y=diff(varargin{i}.S{1});
+    y5to50=y(5<=f{i} & f{i}<=50,:); %just values between 5 and 50 Hz since lower values don't trust
+    avgdiff5to50{i}=mean(y5to50,1);
+end
+
+%convert results above to a cell matrix listing avg derivative of both
+%conditions
+for i=1:length(avgdiff5to50{1})
+    avgdiff5to50{i}=(avgdiff5to50{1}(i)+avgdiff5to50{2}(i))/2;
+end

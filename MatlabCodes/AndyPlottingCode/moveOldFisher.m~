@@ -1,0 +1,17 @@
+function moveOldFisher
+%%
+% startdir=pwd;
+while 1
+    folder{i}=uigetdir(pwd,'Select folder'); %start in current directory and pick a folder
+end
+   
+for
+newFolder='FisherBy1AndOriginal'; %in case want to use this code with a different new folder
+mkdir(folder,newFolder);%make the new folder
+stringsMove={'*SigFreq*' '*Fisher.*' '*FisherData*' 'fpart*' '*OriginalFisher*'}; %did this way so could easily add new things
+for m=1:length(stringsMove)
+    list=dir(fullfile(folder,stringsMove{m}));
+    if size(list,1)>=1 %if that file type exists
+        movefile(fullfile(folder,stringsMove{m}),[folder '/' newFolder]); %move all SigFreq plots to new folder
+    end
+end

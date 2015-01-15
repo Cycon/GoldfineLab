@@ -1,0 +1,45 @@
+function AddEeglabEvents
+
+%requires a .set file
+%optional: a eegLabFormat file containing photic (latencies)
+%optional: a latency file containing a vector of latencies and a cell array
+%of eventNames
+
+[setFileName setpathname]=uigetfile('*.set','Choose .set file');
+EEG=pop_loadset('filename',setFileName,'filepath',setpathname);
+%script to add eeg lab event information into eeglab in the workspace
+
+%allow to choose from file or paste in
+[eeglabFormatFilename pathname]=uigetfile('*Format.mat','Choose eeglab format file if has photic timings in it');
+[latencyFilename latpathname]=uigetfile('*Latencies.mat','Choose file containing latencies and/or names (optional)');
+    
+if eeglabFormatFilename==0
+    photic=load(fullfile(latpathname,latencyFilename),'latencies'); %need to create a list in the workspace like latencies =[paste excel here];
+    fraction=input('Fraction to add to latencies?: ');
+    if ~isempty(fraction)
+        photic.latencies=photic.latencies+fraction;
+    end
+    photic.latencies=photic.latencies*EEG.srate;%this is done automatically in true photic
+else
+    load(fullfile(pathname,eeglabFormatFilename),'photic');%brings in photic.latencies only
+end
+
+if strcmpi(input('Use eventNames from file? (y/n)[y]','s'),'n')
+    eventNames=repmat({'event'},length(photic.latencies),1);
+else
+    load(fullfile(latpathname,latencyFilename),'eventNames');
+    if ~length(eventNames)==length(photic.latencies)
+        disp('wrong number of event names for latencies')
+        return
+    end
+end
+    
+e=length(EEG.event);%in case there already are events in place so not to overwrite
+for ii=1+e:length(photic.latencies)
+     EEG.event(ii).latency=photic.latencies(ii);
+     EEG.event(ii).type=eventNames{ii};
+end
+ 
+% [ALLEEG EEG CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET); %to put into the ALLEEG structure
+% eeglab redraw % Redraw the main eeglab window
+EEG = pop_saveset( EEG,'savemode','resave');
