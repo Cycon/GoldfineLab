@@ -9,7 +9,7 @@
 
 ****Setting Up GitHub/Setting up local repository (Applies to Everybody)
 1. Open GitHub Client and Log In
-2. Go to the repository page in your internet browser, https://github.com/Cycon/GoldfineLab
+2. Go to our repository page in your internet browser, https://github.com/Cycon/GoldfineLab
 3. Press "Clone in Desktop" (bottom right hand corner). This will clone the master branch to a new folder on your desktop.
 
  
@@ -34,10 +34,17 @@ When starting Github, you will likely have your active branch be the master.
 	1a. If the master has been updated and you wish to pull the 
 	    files to your branch to give you the most updated version, 
 	   **** ___________syncing branch with master instructions_______
+
+	1b. Alternatively, if there is nothing you wish to hold onto from your current experimental folder, you could simply delete the branch
+            and make a new one. Only suggested if you have made no changes or are unable to sync the master code to your folder.
+            (Currently trying to figure out how to do this without using the git shell/command line, through the client).
 2. Open the work directory and edit/test code as you would normally.
 3. Save all code.
 4. Press "Sync" in the top right hand corner of the GitHub Client to 
-   update your experimental branch with your newest revisions.
+   send your updated code to the head (temporary loading space before changes are committed to the project).
+5. Write a small title for your revision (ex: Started Mean Calculator), and add a description if you see fit.
+   Often you can include thoughts as to where you plan to venture with this update so that others on the project can try to
+   follow along with your updates.
 
 
 -Written by Nicholas Walsh
