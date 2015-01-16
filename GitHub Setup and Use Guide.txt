@@ -7,19 +7,17 @@
   __/ |                           __/ |                   
  |___/                           |___/                    
 
-****Setting Up GitHub (Applies to Everybody)
-***______instructions for cloning a pre-existing repository______
-(?)1. Create a folder, this will serve as your work directory. 
-(?)2. Open the Github client and sign in. 
-(?)3. In the top right corner, click the gear. 
-(?)4. Click repository settings.
+****Setting Up GitHub/Setting up local repository (Applies to Everybody)
+1. Open GitHub Client and Log In
+2. Go to the repository page in your internet browser, https://github.com/Cycon/GoldfineLab
+3. Press "Clone in Desktop" (bottom right hand corner). This will clone the master branch to a new folder on your desktop.
 
  
-****Accessing Latest Code (Non-coders)
+****Accessing Latest Code (Non-coders/Reading or compiling code)
 1. Open GitHub Client and Sign In.
 2. Press "Sync" in the upper right hand corner.
 3. Code is now updated to the newest master version in your local directory. 
-4. Run code as you would normally.
+4. Run and compile code as you would normally.
 
 
 ****Setup(New Coders/New Features)
